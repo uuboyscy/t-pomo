@@ -24,6 +24,7 @@ Issues = "https://github.com/uuboyscy/t-pomo/issues"
 
 [tool.poetry.group.dev.dependencies]
 build = "^1.2.2.post1"
+twine = "^6.1.0"
 
 [tool.poetry.scripts]
 t-pomo = "t_pomo.t_pomo:main"
