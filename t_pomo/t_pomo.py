@@ -55,7 +55,7 @@ def _show_countdown_info(
         _show_art_text_with_addstr_coordinate(
             stdscr=stdscr,
             y=2,
-            x=5,
+            x=0,
             art_text_str=text2art(f"{_get_hh_mm_ss(second)}", font="soft", space=0),
         )
         stdscr.attroff(curses.color_pair(1))
@@ -65,7 +65,7 @@ def _show_countdown_info(
         _show_art_text_with_addstr_coordinate(
             stdscr=stdscr,
             y=11,
-            x=5,
+            x=0,
             art_text_str=text2art(message),
         )
 
