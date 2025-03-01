@@ -28,4 +28,4 @@ This starts a 30-minute work session followed by a 10-minute break, repeating 4 
 
 ## 🖼 Preview
 The timer will display an ASCII-style countdown with 🍅 tomato icons.
-[![timer_display_sample](timer_display_sample.png)](https://github.com/uuboyscy/t-pomo/raw/main/timer_display_sample.png)
+![timer_display_sample](https://github.com/uuboyscy/t-pomo/raw/main/timer_display_sample.png)
