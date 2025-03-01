@@ -12,6 +12,26 @@ def _get_hh_mm_ss(seconds: int) -> str:
     return f"{hour:02}:{minute:02}:{second:02}"
 
 
+def _show_art_text_with_addstr_coordinate(
+    stdscr: curses.window, y: int, x: int, art_text_str: str
+) -> None:
+    """
+    Display ASCII art text on the curses window at specified coordinates.
+
+    Args:
+        stdscr (curses.window): The curses window object where the text will be displayed.
+        y (int): The y-coordinate (row) where the text will start.
+        x (int): The x-coordinate (column) where the text will start.
+        art_text_str (str): The ASCII art text to be displayed.
+
+    Returns:
+        None
+    """
+    art_text_row_list = art_text_str.split("\n")
+    for i, art_text_row in enumerate(art_text_row_list):
+        stdscr.addstr(y + i, x, art_text_row)
+
+
 def _show_countdown_info(
     stdscr: curses.window,
     countdown_seconds: int = 25 * 60,
@@ -28,12 +48,27 @@ def _show_countdown_info(
 
     for second in range(countdown_seconds, 0, -1):
         stdscr.clear()
+
         stdscr.addstr(1, 0, "🍅" * tomato_length)
+
         stdscr.attron(curses.color_pair(1))
-        stdscr.addstr(2, 0, text2art(f"{_get_hh_mm_ss(second)}", font="soft", space=0))
+        _show_art_text_with_addstr_coordinate(
+            stdscr=stdscr,
+            y=2,
+            x=5,
+            art_text_str=text2art(f"{_get_hh_mm_ss(second)}", font="soft", space=0),
+        )
         stdscr.attroff(curses.color_pair(1))
+
         stdscr.addstr(9, 0, "🍅" * tomato_length)
-        stdscr.addstr(11, 0, text2art(message))
+
+        _show_art_text_with_addstr_coordinate(
+            stdscr=stdscr,
+            y=11,
+            x=5,
+            art_text_str=text2art(message),
+        )
+
         stdscr.refresh()
 
         next_time = start_time + 1
