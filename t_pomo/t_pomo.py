@@ -40,32 +40,35 @@ def _show_countdown_info(
     curses.start_color()
     curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
 
-    tomato_length = (
-        max(map(len, text2art("00:00:00", font="soft", space=0).split("\n"))) // 2
-    )
+    timer_text = text2art("00:00:00", font="soft", space=0)
+    max_timer_row_len = max(map(len, timer_text.split("\n")))
+    tomato_length = max_timer_row_len // 2
 
     start_time = time.monotonic()
 
     for second in range(countdown_seconds, 0, -1):
+        _, max_curses_width = stdscr.getmaxyx()
+        msg_start_x = (max_curses_width - max_timer_row_len) // 2
+
         stdscr.clear()
 
-        stdscr.addstr(1, 0, "🍅" * tomato_length)
+        stdscr.addstr(1, msg_start_x - 2, "🍅" * tomato_length)
 
         stdscr.attron(curses.color_pair(1))
         _show_art_text_with_addstr_coordinate(
             stdscr=stdscr,
             y=2,
-            x=0,
+            x=msg_start_x,
             art_text_str=text2art(f"{_get_hh_mm_ss(second)}", font="soft", space=0),
         )
         stdscr.attroff(curses.color_pair(1))
 
-        stdscr.addstr(9, 0, "🍅" * tomato_length)
+        stdscr.addstr(9, msg_start_x - 2, "🍅" * tomato_length)
 
         _show_art_text_with_addstr_coordinate(
             stdscr=stdscr,
             y=11,
-            x=0,
+            x=msg_start_x,
             art_text_str=text2art(message),
         )
 
