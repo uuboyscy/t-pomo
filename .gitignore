@@ -170,5 +170,7 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+# Development
 test/
 poetry.lock
+.vscode
