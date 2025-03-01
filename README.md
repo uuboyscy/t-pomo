@@ -1,7 +1,7 @@
 # t-pomo
 
 ## 🛠 Installation
-Ensure you have Python installed (>=3.12), then install the package using pip:
+Ensure you have Python installed (>=3.9), then install the package using pip:
 ```
 pip install t-pomo
 ```
