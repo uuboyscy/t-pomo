@@ -1,6 +1,6 @@
 [project]
 name = "t-pomo"
-version = "0.2.0"
+version = "0.2.1"
 description = "A simple Pomodoro timer with ASCII art display that runs on terminal."
 authors = [
     {name = "uuboyscy",email = "uuboyscy@uuboyscy.dev"}
