@@ -53,9 +53,17 @@ def _show_countdown_info(
         _, max_curses_width = stdscr.getmaxyx()
         msg_start_x = (max_curses_width - max_timer_row_len) // 2
 
+        complete_progress_emoji_length = int(
+            emoji_length * (second / countdown_seconds),
+        )
+        emoji_line = (
+            emoji * (emoji_length - complete_progress_emoji_length)
+            + "🍀" * complete_progress_emoji_length
+        )
+
         stdscr.clear()
 
-        stdscr.addstr(1, msg_start_x - 2, emoji * emoji_length)
+        stdscr.addstr(1, msg_start_x - 2, emoji_line)
 
         stdscr.attron(curses.color_pair(1))
         _show_art_text_with_addstr_coordinate(
@@ -66,7 +74,7 @@ def _show_countdown_info(
         )
         stdscr.attroff(curses.color_pair(1))
 
-        stdscr.addstr(9, msg_start_x - 2, emoji * emoji_length)
+        stdscr.addstr(9, msg_start_x - 2, emoji_line)
 
         _show_art_text_with_addstr_coordinate(
             stdscr=stdscr,
