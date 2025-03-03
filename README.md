@@ -1,4 +1,5 @@
 # t-pomo
+t-pomo is a lightweight Pomodoro timer designed for the terminal. The "t" stands for terminal, and "pomo" is short for Pomodoro, a time management technique that boosts productivity by alternating focused work sessions with short breaks.
 
 ## 🛠 Installation
 Ensure you have Python installed (>=3.9), then install the package using pip:
