@@ -28,5 +28,5 @@ Enter countdown loop time [1]: 4
 This starts a 30-minute work session followed by a 10-minute break, repeating 4 times.
 
 ## 🖼 Preview
-The timer will display an ASCII-style countdown with 🍅 tomato icons.
+The timer features an ASCII-style countdown that visually represents the progress using 🍅 tomato icons. Each icon corresponds to a percentage of the session completed, making it easy to track how much time has passed at a glance.
 ![timer_display_sample](https://github.com/uuboyscy/t-pomo/raw/main/timer_display_sample.png)
