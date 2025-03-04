@@ -43,9 +43,9 @@ def _show_countdown_info(
     curses.start_color()
     curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
 
-    message_art_text = text2art(message, space=0)
+    message_art_text = text2art(message, font=FONT, space=0)
     max_timer_row_len = max(
-        map(len, text2art("00:00:00", font=FONT, space=0).split("\n"))
+        map(len, text2art("00:00:00", font=FONT, space=1).split("\n"))
     )
     max_message_row_len = max(map(len, message_art_text.split("\n")))
     emoji_length = max_timer_row_len // 2
@@ -76,7 +76,7 @@ def _show_countdown_info(
             stdscr=stdscr,
             y=2,
             x=timer_text_start_x,
-            art_text_str=text2art(f"{_get_hh_mm_ss(second)}", font=FONT, space=0),
+            art_text_str=text2art(f"{_get_hh_mm_ss(second)}", font=FONT, space=1),
         )
         stdscr.attroff(curses.color_pair(1))
 
@@ -85,7 +85,7 @@ def _show_countdown_info(
         _show_art_text_with_addstr_coordinate(
             stdscr=stdscr,
             y=11,
-            x=message_text_start_x,
+            x=message_text_start_x - 1,
             art_text_str=message_art_text,
         )
 
@@ -106,13 +106,13 @@ def count_down(
         _show_countdown_info(
             stdscr=stdscr,
             countdown_seconds=work_seconds,
-            message=f"WORK [{loop} / {loop_time}]",
+            message=f"WORK[{loop}/{loop_time}]",
             is_working=True,
         )
         _show_countdown_info(
             stdscr=stdscr,
             countdown_seconds=break_seconds,
-            message=f"BREAK [{loop} / {loop_time}]",
+            message=f"BREAK[{loop}/{loop_time}]",
             is_working=False,
         )
 
