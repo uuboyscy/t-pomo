@@ -41,8 +41,7 @@ def _show_countdown_info(
     curses.start_color()
     curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
 
-    timer_text = text2art("00:00:00", font="soft", space=0)
-    max_timer_row_len = max(map(len, timer_text.split("\n")))
+    max_timer_row_len = max(map(len, text2art("00:00:00", font="soft", space=0).split("\n")))
     emoji_length = max_timer_row_len // 2
 
     emoji = "🍅" if is_working else "🍵"
