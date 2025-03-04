@@ -3,6 +3,8 @@ import time
 
 from art import text2art
 
+FONT = "soft"
+
 
 def _get_hh_mm_ss(seconds: int) -> str:
     """Convert second to HH:MM:ss format."""
@@ -41,7 +43,11 @@ def _show_countdown_info(
     curses.start_color()
     curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
 
-    max_timer_row_len = max(map(len, text2art("00:00:00", font="soft", space=0).split("\n")))
+    message_art_text = text2art(message, space=0)
+    max_timer_row_len = max(
+        map(len, text2art("00:00:00", font=FONT, space=0).split("\n"))
+    )
+    max_message_row_len = max(map(len, message_art_text.split("\n")))
     emoji_length = max_timer_row_len // 2
 
     emoji = "🍅" if is_working else "🍵"
@@ -50,7 +56,8 @@ def _show_countdown_info(
 
     for second in range(countdown_seconds, 0, -1):
         _, max_curses_width = stdscr.getmaxyx()
-        msg_start_x = (max_curses_width - max_timer_row_len) // 2
+        timer_text_start_x = (max_curses_width - max_timer_row_len) // 2
+        message_text_start_x = (max_curses_width - max_message_row_len) // 2
 
         complete_progress_emoji_length = int(
             emoji_length * (second / countdown_seconds),
@@ -62,24 +69,24 @@ def _show_countdown_info(
 
         stdscr.clear()
 
-        stdscr.addstr(1, msg_start_x - 2, emoji_line)
+        stdscr.addstr(1, timer_text_start_x - 2, emoji_line)
 
         stdscr.attron(curses.color_pair(1))
         _show_art_text_with_addstr_coordinate(
             stdscr=stdscr,
             y=2,
-            x=msg_start_x,
-            art_text_str=text2art(f"{_get_hh_mm_ss(second)}", font="soft", space=0),
+            x=timer_text_start_x,
+            art_text_str=text2art(f"{_get_hh_mm_ss(second)}", font=FONT, space=0),
         )
         stdscr.attroff(curses.color_pair(1))
 
-        stdscr.addstr(9, msg_start_x - 2, emoji_line)
+        stdscr.addstr(9, timer_text_start_x - 2, emoji_line)
 
         _show_art_text_with_addstr_coordinate(
             stdscr=stdscr,
             y=11,
-            x=msg_start_x,
-            art_text_str=text2art(message),
+            x=message_text_start_x,
+            art_text_str=message_art_text,
         )
 
         stdscr.refresh()
