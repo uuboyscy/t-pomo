@@ -54,6 +54,7 @@ def _show_countdown_info(
 
     start_time = time.monotonic()
 
+    paused = False
     for second in range(countdown_seconds, 0, -1):
         _, max_curses_width = stdscr.getmaxyx()
         timer_text_start_x = (max_curses_width - max_timer_row_len) // 2
@@ -90,6 +91,31 @@ def _show_countdown_info(
         )
 
         stdscr.refresh()
+
+        # Check for user input
+        stdscr.addstr(
+            19,
+            (max_curses_width - len("[Press 'p' to pause]")) // 2,
+            "[Press 'p' to pause]",
+        )
+        stdscr.nodelay(True)  # Make getch non-blocking
+        key = stdscr.getch()
+        if key == ord("p"):
+            paused = not paused
+            stdscr.addstr(
+                19,
+                (max_curses_width - len("[Press 'p' to resume]")) // 2,
+                "[Press 'p' to resume]",
+            )
+
+        while paused:
+            key = stdscr.getch()
+            if key == ord("p"):
+                paused = False
+            time.sleep(0.1)  # Prevent CPU overuse
+            start_time += 0.1
+
+        stdscr.nodelay(False)  # Revert getch to blocking mode
 
         next_time = start_time + 1
         time.sleep(max(0, next_time - time.monotonic()))
