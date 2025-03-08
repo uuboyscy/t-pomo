@@ -54,7 +54,6 @@ def _show_countdown_info(
 
     start_time = time.monotonic()
 
-    paused = False
     for second in range(countdown_seconds, 0, -1):
         _, max_curses_width = stdscr.getmaxyx()
         timer_text_start_x = (max_curses_width - max_timer_row_len) // 2
@@ -93,6 +92,7 @@ def _show_countdown_info(
         stdscr.refresh()
 
         # Check for user input
+        paused = False
         stdscr.addstr(
             19,
             (max_curses_width - len("[Press 'p' to pause]")) // 2,
