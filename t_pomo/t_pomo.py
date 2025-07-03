@@ -1,6 +1,5 @@
 import curses
 import time
-import textwrap
 
 from art import text2art
 
@@ -10,6 +9,7 @@ except Exception:  # pragma: no cover - optional dependency
     inspirational_quotes = None
 
 FONT = "soft"
+QUOTE_STR = inspirational_quotes.quote().get("quote", "")
 
 
 def _get_hh_mm_ss(seconds: int) -> str:
@@ -38,27 +38,6 @@ def _show_art_text_with_addstr_coordinate(
     art_text_row_list = art_text_str.split("\n")
     for i, art_text_row in enumerate(art_text_row_list):
         stdscr.addstr(y + i, x, art_text_row)
-
-
-def _display_inspirational_quote(stdscr: curses.window) -> None:
-    """Display a random inspirational quote in the middle of the screen."""
-    quote_str = ""
-    if inspirational_quotes is not None:
-        try:
-            quote_str = inspirational_quotes.quote().get("quote", "")
-        except Exception:
-            quote_str = ""
-    if not quote_str:
-        quote_str = "Keep up the great work!"
-
-    max_y, max_x = stdscr.getmaxyx()
-    wrapped_quote = textwrap.wrap(quote_str, max_x - 4)
-    start_y = max_y // 2 - len(wrapped_quote) // 2
-    stdscr.clear()
-    for i, line in enumerate(wrapped_quote):
-        stdscr.addstr(start_y + i, (max_x - len(line)) // 2, line)
-    stdscr.refresh()
-    stdscr.getch()
 
 
 def _show_countdown_info(
@@ -120,9 +99,17 @@ def _show_countdown_info(
 
         stdscr.refresh()
 
-        # Check for user input
+        #####################
+
         stdscr.addstr(
             19,
+            (max_curses_width - len(QUOTE_STR)) // 2,
+            QUOTE_STR,
+        )
+
+        # Check for user input
+        stdscr.addstr(
+            21,
             (max_curses_width - len("[Press 'p' to pause]")) // 2,
             "[Press 'p' to pause]",
         )
@@ -131,7 +118,7 @@ def _show_countdown_info(
         if key == ord("p"):
             paused = not paused
             stdscr.addstr(
-                19,
+                21,
                 (max_curses_width - len("[Press 'p' to resume]")) // 2,
                 "[Press 'p' to resume]",
             )
@@ -148,9 +135,6 @@ def _show_countdown_info(
         next_time = start_time + 1
         time.sleep(max(0, next_time - time.monotonic()))
         start_time = next_time
-
-    if show_quote:
-        _display_inspirational_quote(stdscr)
 
 
 def count_down(
