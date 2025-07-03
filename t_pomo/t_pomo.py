@@ -1,7 +1,13 @@
 import curses
 import time
+import textwrap
 
 from art import text2art
+
+try:
+    import inspirational_quotes
+except Exception:  # pragma: no cover - optional dependency
+    inspirational_quotes = None
 
 FONT = "soft"
 
@@ -34,11 +40,33 @@ def _show_art_text_with_addstr_coordinate(
         stdscr.addstr(y + i, x, art_text_row)
 
 
+def _display_inspirational_quote(stdscr: curses.window) -> None:
+    """Display a random inspirational quote in the middle of the screen."""
+    quote_str = ""
+    if inspirational_quotes is not None:
+        try:
+            quote_str = inspirational_quotes.quote().get("quote", "")
+        except Exception:
+            quote_str = ""
+    if not quote_str:
+        quote_str = "Keep up the great work!"
+
+    max_y, max_x = stdscr.getmaxyx()
+    wrapped_quote = textwrap.wrap(quote_str, max_x - 4)
+    start_y = max_y // 2 - len(wrapped_quote) // 2
+    stdscr.clear()
+    for i, line in enumerate(wrapped_quote):
+        stdscr.addstr(start_y + i, (max_x - len(line)) // 2, line)
+    stdscr.refresh()
+    stdscr.getch()
+
+
 def _show_countdown_info(
     stdscr: curses.window,
     countdown_seconds: int = 25 * 60,
     message: str = "",
     is_working: bool = True,
+    show_quote: bool = False,
 ) -> None:
     curses.start_color()
     curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
@@ -121,6 +149,9 @@ def _show_countdown_info(
         time.sleep(max(0, next_time - time.monotonic()))
         start_time = next_time
 
+    if show_quote:
+        _display_inspirational_quote(stdscr)
+
 
 def count_down(
     stdscr: curses.window,
@@ -140,6 +171,7 @@ def count_down(
             countdown_seconds=break_seconds,
             message=f"BREAK[{loop}/{loop_time}]",
             is_working=False,
+            show_quote=True,
         )
 
     stdscr.getch()  # Wait for key press
