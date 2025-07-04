@@ -45,7 +45,6 @@ def _show_countdown_info(
     countdown_seconds: int = 25 * 60,
     message: str = "",
     is_working: bool = True,
-    show_quote: bool = False,
 ) -> None:
     curses.start_color()
     curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
@@ -155,7 +154,6 @@ def count_down(
             countdown_seconds=break_seconds,
             message=f"BREAK[{loop}/{loop_time}]",
             is_working=False,
-            show_quote=True,
         )
 
     stdscr.getch()  # Wait for key press
