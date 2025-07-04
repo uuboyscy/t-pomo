@@ -3,7 +3,13 @@ import time
 
 from art import text2art
 
+try:
+    import inspirational_quotes
+except Exception:  # pragma: no cover - optional dependency
+    inspirational_quotes = None
+
 FONT = "soft"
+QUOTE_STR = inspirational_quotes.quote().get("quote", "")
 
 
 def _get_hh_mm_ss(seconds: int) -> str:
@@ -92,9 +98,17 @@ def _show_countdown_info(
 
         stdscr.refresh()
 
-        # Check for user input
+        #####################
+
         stdscr.addstr(
             19,
+            (max_curses_width - len(QUOTE_STR)) // 2,
+            QUOTE_STR,
+        )
+
+        # Check for user input
+        stdscr.addstr(
+            21,
             (max_curses_width - len("[Press 'p' to pause]")) // 2,
             "[Press 'p' to pause]",
         )
@@ -103,7 +117,7 @@ def _show_countdown_info(
         if key == ord("p"):
             paused = not paused
             stdscr.addstr(
-                19,
+                21,
                 (max_curses_width - len("[Press 'p' to resume]")) // 2,
                 "[Press 'p' to resume]",
             )
