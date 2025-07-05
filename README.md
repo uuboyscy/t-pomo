@@ -29,6 +29,8 @@ This starts a 30-minute work session followed by a 10-minute break, repeating 4 
 
 After each break, an inspirational quote is displayed to keep you motivated.
 
+Use `[p] PAUSE | [q] STOP` to control the timer.
+
 ## 🖼 Preview
 The timer features an ASCII-style countdown that visually represents the progress using 🍅 tomato icons. Each icon corresponds to a percentage of the session completed, making it easy to track how much time has passed at a glance.
 - Work

@@ -40,6 +40,83 @@ def _show_art_text_with_addstr_coordinate(
         stdscr.addstr(y + i, x, art_text_row)
 
 
+def _display_countdown_clock(
+    stdscr: curses.window,
+    second: int,
+    countdown_seconds: int,
+    timer_x: int,
+    message_x: int,
+    message_art_text: str,
+    emoji: str,
+    emoji_length: int,
+) -> None:
+    """Render the countdown timer and progress bar."""
+
+    complete_progress_emoji_length = int(emoji_length * (second / countdown_seconds))
+    emoji_line = (
+        emoji * (emoji_length - complete_progress_emoji_length)
+        + "🍀" * complete_progress_emoji_length
+    )
+
+    stdscr.clear()
+
+    stdscr.addstr(1, timer_x - 2, emoji_line)
+    stdscr.attron(curses.color_pair(1))
+    _show_art_text_with_addstr_coordinate(
+        stdscr=stdscr,
+        y=2,
+        x=timer_x,
+        art_text_str=text2art(f"{_get_hh_mm_ss(second)}", font=FONT, space=1),
+    )
+    stdscr.attroff(curses.color_pair(1))
+    stdscr.addstr(9, timer_x - 2, emoji_line)
+    _show_art_text_with_addstr_coordinate(
+        stdscr=stdscr,
+        y=11,
+        x=message_x - 1,
+        art_text_str=message_art_text,
+    )
+    stdscr.refresh()
+
+
+def _show_inspirational_quote(stdscr: curses.window, width: int) -> None:
+    """Display an inspirational quote centered on the screen."""
+    stdscr.addstr(19, (width - len(QUOTE_STR)) // 2, QUOTE_STR)
+
+
+def _handle_pause(
+    stdscr: curses.window, paused: bool, width: int, start_time: float
+) -> tuple[bool, float, bool]:
+    """Handle pause state and quit command, showing control instructions."""
+
+    instruction = "[p] RESUME | [q] STOP" if paused else "[p] PAUSE | [q] STOP"
+    stdscr.addstr(21, (width - len(instruction)) // 2, instruction)
+    stdscr.nodelay(True)
+    key = stdscr.getch()
+    if key == ord("q"):
+        return paused, start_time, True
+    if key == ord("p"):
+        paused = not paused
+
+    while paused:
+        resume_instruction = "[p] RESUME | [q] STOP"
+        stdscr.addstr(
+            21,
+            (width - len(resume_instruction)) // 2,
+            resume_instruction,
+        )
+        key = stdscr.getch()
+        if key == ord("q"):
+            return paused, start_time, True
+        if key == ord("p"):
+            paused = False
+        time.sleep(0.1)
+        start_time += 0.1
+
+    stdscr.nodelay(False)
+    return paused, start_time, False
+
+
 def _show_countdown_info(
     stdscr: curses.window,
     countdown_seconds: int = 25 * 60,
@@ -66,74 +143,34 @@ def _show_countdown_info(
         timer_text_start_x = (max_curses_width - max_timer_row_len) // 2
         message_text_start_x = (max_curses_width - max_message_row_len) // 2
 
-        complete_progress_emoji_length = int(
-            emoji_length * (second / countdown_seconds),
-        )
-        emoji_line = (
-            emoji * (emoji_length - complete_progress_emoji_length)
-            + "🍀" * complete_progress_emoji_length
-        )
-
-        stdscr.clear()
-
-        stdscr.addstr(1, timer_text_start_x - 2, emoji_line)
-
-        stdscr.attron(curses.color_pair(1))
-        _show_art_text_with_addstr_coordinate(
+        _display_countdown_clock(
             stdscr=stdscr,
-            y=2,
-            x=timer_text_start_x,
-            art_text_str=text2art(f"{_get_hh_mm_ss(second)}", font=FONT, space=1),
+            second=second,
+            countdown_seconds=countdown_seconds,
+            timer_x=timer_text_start_x,
+            message_x=message_text_start_x,
+            message_art_text=message_art_text,
+            emoji=emoji,
+            emoji_length=emoji_length,
         )
-        stdscr.attroff(curses.color_pair(1))
 
-        stdscr.addstr(9, timer_text_start_x - 2, emoji_line)
+        _show_inspirational_quote(stdscr, max_curses_width)
 
-        _show_art_text_with_addstr_coordinate(
+        paused, start_time, stop = _handle_pause(
             stdscr=stdscr,
-            y=11,
-            x=message_text_start_x - 1,
-            art_text_str=message_art_text,
+            paused=paused,
+            width=max_curses_width,
+            start_time=start_time,
         )
 
-        stdscr.refresh()
-
-        #####################
-
-        stdscr.addstr(
-            19,
-            (max_curses_width - len(QUOTE_STR)) // 2,
-            QUOTE_STR,
-        )
-
-        # Check for user input
-        stdscr.addstr(
-            21,
-            (max_curses_width - len("[Press 'p' to pause]")) // 2,
-            "[Press 'p' to pause]",
-        )
-        stdscr.nodelay(True)  # Make getch non-blocking
-        key = stdscr.getch()
-        if key == ord("p"):
-            paused = not paused
-            stdscr.addstr(
-                21,
-                (max_curses_width - len("[Press 'p' to resume]")) // 2,
-                "[Press 'p' to resume]",
-            )
-
-        while paused:
-            key = stdscr.getch()
-            if key == ord("p"):
-                paused = False
-            time.sleep(0.1)  # Prevent CPU overuse
-            start_time += 0.1
-
-        stdscr.nodelay(False)  # Revert getch to blocking mode
+        if stop:
+            return True
 
         next_time = start_time + 1
         time.sleep(max(0, next_time - time.monotonic()))
         start_time = next_time
+
+    return False
 
 
 def count_down(
@@ -143,18 +180,20 @@ def count_down(
     loop_time: int = 1,
 ) -> None:
     for loop in range(loop_time):
-        _show_countdown_info(
+        if _show_countdown_info(
             stdscr=stdscr,
             countdown_seconds=work_seconds,
             message=f"WORK[{loop}/{loop_time}]",
             is_working=True,
-        )
-        _show_countdown_info(
+        ):
+            return
+        if _show_countdown_info(
             stdscr=stdscr,
             countdown_seconds=break_seconds,
             message=f"BREAK[{loop}/{loop_time}]",
             is_working=False,
-        )
+        ):
+            return
 
     stdscr.getch()  # Wait for key press
 
