@@ -52,9 +52,7 @@ def _display_countdown_clock(
 ) -> None:
     """Render the countdown timer and progress bar."""
 
-    complete_progress_emoji_length = int(
-        emoji_length * (second / countdown_seconds)
-    )
+    complete_progress_emoji_length = int(emoji_length * (second / countdown_seconds))
     emoji_line = (
         emoji * (emoji_length - complete_progress_emoji_length)
         + "🍀" * complete_progress_emoji_length
@@ -88,30 +86,35 @@ def _show_inspirational_quote(stdscr: curses.window, width: int) -> None:
 
 def _handle_pause(
     stdscr: curses.window, paused: bool, width: int, start_time: float
-) -> tuple[bool, float]:
-    """Handle pause state and show instructions."""
+) -> tuple[bool, float, bool]:
+    """Handle pause state and quit command, showing control instructions."""
 
-    instruction = "[Press 'p' to resume]" if paused else "[Press 'p' to pause]"
+    instruction = "[p] RESUME | [q] STOP" if paused else "[p] PAUSE | [q] STOP"
     stdscr.addstr(21, (width - len(instruction)) // 2, instruction)
     stdscr.nodelay(True)
     key = stdscr.getch()
+    if key == ord("q"):
+        return paused, start_time, True
     if key == ord("p"):
         paused = not paused
 
     while paused:
+        resume_instruction = "[p] RESUME | [q] STOP"
         stdscr.addstr(
             21,
-            (width - len("[Press 'p' to resume]")) // 2,
-            "[Press 'p' to resume]",
+            (width - len(resume_instruction)) // 2,
+            resume_instruction,
         )
         key = stdscr.getch()
+        if key == ord("q"):
+            return paused, start_time, True
         if key == ord("p"):
             paused = False
         time.sleep(0.1)
         start_time += 0.1
 
     stdscr.nodelay(False)
-    return paused, start_time
+    return paused, start_time, False
 
 
 def _show_countdown_info(
@@ -153,16 +156,21 @@ def _show_countdown_info(
 
         _show_inspirational_quote(stdscr, max_curses_width)
 
-        paused, start_time = _handle_pause(
+        paused, start_time, stop = _handle_pause(
             stdscr=stdscr,
             paused=paused,
             width=max_curses_width,
             start_time=start_time,
         )
 
+        if stop:
+            return True
+
         next_time = start_time + 1
         time.sleep(max(0, next_time - time.monotonic()))
         start_time = next_time
+
+    return False
 
 
 def count_down(
@@ -172,18 +180,20 @@ def count_down(
     loop_time: int = 1,
 ) -> None:
     for loop in range(loop_time):
-        _show_countdown_info(
+        if _show_countdown_info(
             stdscr=stdscr,
             countdown_seconds=work_seconds,
             message=f"WORK[{loop}/{loop_time}]",
             is_working=True,
-        )
-        _show_countdown_info(
+        ):
+            return
+        if _show_countdown_info(
             stdscr=stdscr,
             countdown_seconds=break_seconds,
             message=f"BREAK[{loop}/{loop_time}]",
             is_working=False,
-        )
+        ):
+            return
 
     stdscr.getch()  # Wait for key press
 
