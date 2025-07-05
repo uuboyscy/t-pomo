@@ -89,9 +89,9 @@ def _show_inspirational_quote(stdscr: curses.window, width: int) -> None:
 def _handle_pause(
     stdscr: curses.window, paused: bool, width: int, start_time: float
 ) -> tuple[bool, float, bool]:
-    """Handle pause state, quit command and show instructions."""
+    """Handle pause state and quit command, showing control instructions."""
 
-    instruction = "[Press 'p' to resume]" if paused else "[Press 'p' to pause]"
+    instruction = "[p] RESUME; [q] STOP" if paused else "[p] PAUSE; [q] STOP"
     stdscr.addstr(21, (width - len(instruction)) // 2, instruction)
     stdscr.nodelay(True)
     key = stdscr.getch()
@@ -101,10 +101,11 @@ def _handle_pause(
         paused = not paused
 
     while paused:
+        resume_instruction = "[p] RESUME; [q] STOP"
         stdscr.addstr(
             21,
-            (width - len("[Press 'p' to resume]")) // 2,
-            "[Press 'p' to resume]",
+            (width - len(resume_instruction)) // 2,
+            resume_instruction,
         )
         key = stdscr.getch()
         if key == ord("q"):
