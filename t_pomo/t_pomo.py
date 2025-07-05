@@ -52,9 +52,7 @@ def _display_countdown_clock(
 ) -> None:
     """Render the countdown timer and progress bar."""
 
-    complete_progress_emoji_length = int(
-        emoji_length * (second / countdown_seconds)
-    )
+    complete_progress_emoji_length = int(emoji_length * (second / countdown_seconds))
     emoji_line = (
         emoji * (emoji_length - complete_progress_emoji_length)
         + "🍀" * complete_progress_emoji_length
@@ -91,7 +89,7 @@ def _handle_pause(
 ) -> tuple[bool, float, bool]:
     """Handle pause state and quit command, showing control instructions."""
 
-    instruction = "[p] RESUME; [q] STOP" if paused else "[p] PAUSE; [q] STOP"
+    instruction = "[p] RESUME | [q] STOP" if paused else "[p] PAUSE | [q] STOP"
     stdscr.addstr(21, (width - len(instruction)) // 2, instruction)
     stdscr.nodelay(True)
     key = stdscr.getch()
@@ -101,7 +99,7 @@ def _handle_pause(
         paused = not paused
 
     while paused:
-        resume_instruction = "[p] RESUME; [q] STOP"
+        resume_instruction = "[p] RESUME | [q] STOP"
         stdscr.addstr(
             21,
             (width - len(resume_instruction)) // 2,
