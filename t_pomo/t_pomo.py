@@ -48,6 +48,7 @@ def _display_countdown_clock(
     message_x: int,
     message_art_text: str,
     bar_length: int,
+    color_pair: int,
 ) -> None:
     """Render the countdown timer and progress bar."""
 
@@ -55,24 +56,31 @@ def _display_countdown_clock(
     progress = second / countdown_seconds
     filled_length = int(bar_length * progress)
     
-    # Create the progress bar string
-    # █ = Filled, ░ = Empty
-    bar = "█" * filled_length + "░" * (bar_length - filled_length)
-
     stdscr.clear()
+    
+    # Draw the progress bar (Top)
+    # Filled part: Reverse video spaces (looks like solid blocks)
+    stdscr.attron(curses.color_pair(color_pair) | curses.A_REVERSE)
+    stdscr.addstr(1, timer_x, " " * filled_length)
+    stdscr.attroff(curses.color_pair(color_pair) | curses.A_REVERSE)
+    
+    # Empty part: Hyphens
+    stdscr.addstr(1, timer_x + filled_length, "-" * (bar_length - filled_length))
 
-    # Display the progress bar
-    # We use the same y-coordinates as before to maintain layout
-    stdscr.addstr(1, timer_x, bar)
-    stdscr.attron(curses.color_pair(1))
+    stdscr.attron(curses.color_pair(color_pair))
     _show_art_text_with_addstr_coordinate(
         stdscr=stdscr,
         y=2,
         x=timer_x,
         art_text_str=text2art(f"{_get_hh_mm_ss(second)}", font=FONT, space=1),
     )
-    stdscr.attroff(curses.color_pair(1))
-    stdscr.addstr(9, timer_x, bar)
+    stdscr.attroff(curses.color_pair(color_pair))
+    
+    # Draw the progress bar (Bottom)
+    stdscr.attron(curses.color_pair(color_pair) | curses.A_REVERSE)
+    stdscr.addstr(9, timer_x, " " * filled_length)
+    stdscr.attroff(curses.color_pair(color_pair) | curses.A_REVERSE)
+    stdscr.addstr(9, timer_x + filled_length, "-" * (bar_length - filled_length))
     _show_art_text_with_addstr_coordinate(
         stdscr=stdscr,
         y=11,
@@ -144,6 +152,8 @@ def _show_countdown_info(
     curses.start_color()
     curses.use_default_colors()
     curses.init_pair(1, curses.COLOR_CYAN, -1)
+    curses.init_pair(2, curses.COLOR_YELLOW, -1)
+    curses.init_pair(3, curses.COLOR_RED, -1)
 
     message_art_text = text2art(message, font=FONT, space=0)
     max_timer_row_len = max(
@@ -157,6 +167,15 @@ def _show_countdown_info(
 
     paused = False
     for second in range(countdown_seconds, 0, -1):
+        # Determine color based on time remaining
+        progress = second / countdown_seconds
+        if progress > 0.5:
+            color_pair = 1  # Cyan
+        elif progress > 0.2:
+            color_pair = 2  # Yellow
+        else:
+            color_pair = 3  # Red
+
         _, max_curses_width = stdscr.getmaxyx()
         timer_text_start_x = (max_curses_width - max_timer_row_len) // 2
         message_text_start_x = (max_curses_width - max_message_row_len) // 2
@@ -169,6 +188,7 @@ def _show_countdown_info(
             message_x=message_text_start_x,
             message_art_text=message_art_text,
             bar_length=bar_length,
+            color_pair=color_pair,
         )
 
         _show_inspirational_quote(stdscr, max_curses_width)
