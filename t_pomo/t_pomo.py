@@ -47,20 +47,23 @@ def _display_countdown_clock(
     timer_x: int,
     message_x: int,
     message_art_text: str,
-    emoji: str,
-    emoji_length: int,
+    bar_length: int,
 ) -> None:
     """Render the countdown timer and progress bar."""
 
-    complete_progress_emoji_length = int(emoji_length * (second / countdown_seconds))
-    emoji_line = (
-        emoji * (emoji_length - complete_progress_emoji_length)
-        + "🍀" * complete_progress_emoji_length
-    )
+    # Calculate progress (1.0 to 0.0) - Time Remaining
+    progress = second / countdown_seconds
+    filled_length = int(bar_length * progress)
+    
+    # Create the progress bar string
+    # █ = Filled, ░ = Empty
+    bar = "█" * filled_length + "░" * (bar_length - filled_length)
 
     stdscr.clear()
 
-    stdscr.addstr(1, timer_x - 2, emoji_line)
+    # Display the progress bar
+    # We use the same y-coordinates as before to maintain layout
+    stdscr.addstr(1, timer_x, bar)
     stdscr.attron(curses.color_pair(1))
     _show_art_text_with_addstr_coordinate(
         stdscr=stdscr,
@@ -69,7 +72,7 @@ def _display_countdown_clock(
         art_text_str=text2art(f"{_get_hh_mm_ss(second)}", font=FONT, space=1),
     )
     stdscr.attroff(curses.color_pair(1))
-    stdscr.addstr(9, timer_x - 2, emoji_line)
+    stdscr.addstr(9, timer_x, bar)
     _show_art_text_with_addstr_coordinate(
         stdscr=stdscr,
         y=11,
@@ -81,7 +84,22 @@ def _display_countdown_clock(
 
 def _show_inspirational_quote(stdscr: curses.window, width: int) -> None:
     """Display an inspirational quote centered on the screen."""
-    stdscr.addstr(19, (width - len(QUOTE_STR)) // 2, QUOTE_STR)
+    max_y, max_x = stdscr.getmaxyx()
+    y = 19
+    
+    if y >= max_y:
+        return  # Screen too short
+
+    quote = QUOTE_STR
+    if len(quote) > width:
+        quote = quote[:width-1]
+    
+    x = max(0, (width - len(quote)) // 2)
+    
+    try:
+        stdscr.addstr(y, x, quote)
+    except curses.error:
+        pass  # Ignore drawing errors for the quote
 
 
 def _handle_pause(
@@ -124,17 +142,17 @@ def _show_countdown_info(
     is_working: bool = True,
 ) -> None:
     curses.start_color()
-    curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
+    curses.use_default_colors()
+    curses.init_pair(1, curses.COLOR_CYAN, -1)
 
     message_art_text = text2art(message, font=FONT, space=0)
     max_timer_row_len = max(
         map(len, text2art("00:00:00", font=FONT, space=1).split("\n"))
     )
     max_message_row_len = max(map(len, message_art_text.split("\n")))
-    emoji_length = max_timer_row_len // 2
+    bar_length = max_timer_row_len
 
-    emoji = "🍅" if is_working else "🍵"
-
+    curses.curs_set(0)  # Hide cursor
     start_time = time.monotonic()
 
     paused = False
@@ -150,8 +168,7 @@ def _show_countdown_info(
             timer_x=timer_text_start_x,
             message_x=message_text_start_x,
             message_art_text=message_art_text,
-            emoji=emoji,
-            emoji_length=emoji_length,
+            bar_length=bar_length,
         )
 
         _show_inspirational_quote(stdscr, max_curses_width)
@@ -199,18 +216,24 @@ def count_down(
 
 
 def main() -> None:
-    work_seconds = (
-        int(input("Enter working time in minutes [25]: ").strip() or "25") * 60
-    )
-    break_seconds = int(input("Enter break time in minutes [5]: ").strip() or "5") * 60
-    pomo_loop_time = int(input("Enter countdown loop time [1]: ").strip() or "1")
+    try:
+        work_seconds = (
+            int(input("Enter working time in minutes [25]: ").strip() or "25") * 60
+        )
+        break_seconds = int(input("Enter break time in minutes [5]: ").strip() or "5") * 60
+        pomo_loop_time = int(input("Enter countdown loop time [1]: ").strip() or "1")
 
-    curses.wrapper(
-        count_down,
-        work_seconds,
-        break_seconds,
-        pomo_loop_time,
-    )
+        curses.wrapper(
+            count_down,
+            work_seconds,
+            break_seconds,
+            pomo_loop_time,
+        )
+    except Exception as e:
+        with open("t_pomo_error.log", "w") as f:
+            import traceback
+            traceback.print_exc(file=f)
+        print(f"An error occurred. Check t_pomo_error.log for details.\n{e}")
 
 
 if __name__ == "__main__":
