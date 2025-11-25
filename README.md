@@ -32,8 +32,12 @@ After each break, an inspirational quote is displayed to keep you motivated.
 Use `[p] PAUSE | [q] STOP` to control the timer.
 
 ## 🖼 Preview
-The timer features an ASCII-style countdown that visually represents the progress using 🍅 tomato icons. Each icon corresponds to a percentage of the session completed, making it easy to track how much time has passed at a glance.
+The timer features an ASCII-style countdown with a modern, solid block progress bar. The interface changes color dynamically to indicate urgency:
+- **Cyan**: Relaxed (> 50% time remaining)
+- **Yellow**: Warning (20-50% time remaining)
+- **Red**: Urgent (< 20% time remaining)
 - Work
 ![timer_display_sample_work](https://github.com/uuboyscy/t-pomo/raw/main/timer_display_sample_work.png)
+![timer_display_sample_work](https://github.com/uuboyscy/t-pomo/raw/main/timer_display_sample_work_middle.png)
 - Break
 ![timer_display_sample_break](https://github.com/uuboyscy/t-pomo/raw/main/timer_display_sample_break.png)
