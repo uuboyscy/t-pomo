@@ -29,7 +29,7 @@ This starts a 30-minute work session followed by a 10-minute break, repeating 4 
 
 After each break, an inspirational quote is displayed to keep you motivated.
 
-Use `[p] PAUSE | [q] STOP` to control the timer.
+Use `[p] PAUSE | [s] SKIP | [q] STOP` to control the timer.
 
 ## 🖼 Preview
 The timer features an ASCII-style countdown with a modern, solid block progress bar. The interface changes color dynamically to indicate urgency:
