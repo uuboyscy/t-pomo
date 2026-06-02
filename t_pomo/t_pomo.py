@@ -112,20 +112,30 @@ def _show_inspirational_quote(stdscr: curses.window, width: int) -> None:
 
 def _handle_pause(
     stdscr: curses.window, paused: bool, width: int, start_time: float
-) -> tuple[bool, float, bool]:
-    """Handle pause state and quit command, showing control instructions."""
+) -> tuple[bool, float, bool, bool]:
+    """Handle pause, skip, and quit commands, showing control instructions."""
 
-    instruction = "[p] RESUME | [q] STOP" if paused else "[p] PAUSE | [q] STOP"
+    def finish(stop: bool = False, skip: bool = False) -> tuple[bool, float, bool, bool]:
+        stdscr.nodelay(False)
+        return paused, start_time, stop, skip
+
+    instruction = (
+        "[p] RESUME | [s] SKIP | [q] STOP"
+        if paused
+        else "[p] PAUSE | [s] SKIP | [q] STOP"
+    )
     stdscr.addstr(21, (width - len(instruction)) // 2, instruction)
     stdscr.nodelay(True)
     key = stdscr.getch()
     if key == ord("q"):
-        return paused, start_time, True
+        return finish(stop=True)
+    if key == ord("s"):
+        return finish(skip=True)
     if key == ord("p"):
         paused = not paused
 
     while paused:
-        resume_instruction = "[p] RESUME | [q] STOP"
+        resume_instruction = "[p] RESUME | [s] SKIP | [q] STOP"
         stdscr.addstr(
             21,
             (width - len(resume_instruction)) // 2,
@@ -133,14 +143,15 @@ def _handle_pause(
         )
         key = stdscr.getch()
         if key == ord("q"):
-            return paused, start_time, True
+            return finish(stop=True)
+        if key == ord("s"):
+            return finish(skip=True)
         if key == ord("p"):
             paused = False
         time.sleep(0.1)
         start_time += 0.1
 
-    stdscr.nodelay(False)
-    return paused, start_time, False
+    return finish()
 
 
 def _show_countdown_info(
@@ -193,7 +204,7 @@ def _show_countdown_info(
 
         _show_inspirational_quote(stdscr, max_curses_width)
 
-        paused, start_time, stop = _handle_pause(
+        paused, start_time, stop, skip = _handle_pause(
             stdscr=stdscr,
             paused=paused,
             width=max_curses_width,
@@ -202,6 +213,8 @@ def _show_countdown_info(
 
         if stop:
             return True
+        if skip:
+            return False
 
         next_time = start_time + 1
         time.sleep(max(0, next_time - time.monotonic()))
