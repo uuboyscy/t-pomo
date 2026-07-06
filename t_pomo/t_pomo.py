@@ -1,5 +1,7 @@
 import curses
 import time
+from collections.abc import Callable
+from typing import Optional
 
 from art import text2art
 
@@ -9,7 +11,125 @@ except Exception:  # pragma: no cover - optional dependency
     inspirational_quotes = None
 
 FONT = "soft"
-QUOTE_STR = inspirational_quotes.quote().get("quote", "")
+QUOTE_STR = (
+    inspirational_quotes.quote().get("quote", "")
+    if inspirational_quotes is not None
+    else ""
+)
+MIN_TERMINAL_WIDTH = 80
+MIN_TERMINAL_HEIGHT = 24
+CONTROL_INSTRUCTION = "[p] PAUSE | [s] SKIP | [q] STOP"
+
+
+def _add_centered_segments(
+    stdscr: curses.window,
+    y: int,
+    segments: list[tuple[str, int]],
+) -> None:
+    """Safely draw colored text segments centered on a terminal row."""
+    max_y, max_x = stdscr.getmaxyx()
+    if y < 0 or y >= max_y or max_x <= 0:
+        return
+
+    total_length = sum(len(text) for text, _ in segments)
+    x = max(0, (max_x - total_length) // 2)
+
+    for text, attribute in segments:
+        if x >= max_x:
+            break
+
+        available_width = max_x - x
+        # Writing the bottom-right cell can raise curses.error on some terminals.
+        if y == max_y - 1:
+            available_width -= 1
+        visible_text = text[: max(0, available_width)]
+        if not visible_text:
+            break
+
+        try:
+            stdscr.addstr(y, x, visible_text, attribute)
+        except curses.error:
+            pass
+        x += len(visible_text)
+
+
+def _display_terminal_too_small(
+    stdscr: curses.window,
+    required_width: int,
+    required_height: int,
+) -> None:
+    """Show the current and required terminal dimensions."""
+    current_height, current_width = stdscr.getmaxyx()
+    normal = curses.A_NORMAL
+    good = curses.color_pair(1) | curses.A_BOLD
+    bad = curses.color_pair(3) | curses.A_BOLD
+    start_y = max(0, (current_height - 5) // 2)
+
+    stdscr.erase()
+    _add_centered_segments(
+        stdscr,
+        start_y,
+        [("Terminal size too small:", curses.A_BOLD)],
+    )
+    _add_centered_segments(
+        stdscr,
+        start_y + 1,
+        [
+            ("Width = ", normal),
+            (str(current_width), good if current_width >= required_width else bad),
+            (" Height = ", normal),
+            (str(current_height), good if current_height >= required_height else bad),
+        ],
+    )
+    _add_centered_segments(
+        stdscr,
+        start_y + 3,
+        [("Needed for current config:", curses.A_BOLD)],
+    )
+    _add_centered_segments(
+        stdscr,
+        start_y + 4,
+        [
+            (f"Width = {required_width} Height = {required_height}", normal),
+        ],
+    )
+    stdscr.refresh()
+
+
+def _wait_for_usable_terminal(
+    stdscr: curses.window,
+    required_width: int,
+    required_height: int,
+) -> tuple[float, bool]:
+    """Wait for a usable terminal, returning paused seconds and whether to stop."""
+    wait_started_at: Optional[float] = None
+
+    while True:
+        current_height, current_width = stdscr.getmaxyx()
+        if (
+            current_width >= required_width
+            and current_height >= required_height
+        ):
+            stdscr.timeout(-1)
+            waited = (
+                0.0
+                if wait_started_at is None
+                else time.monotonic() - wait_started_at
+            )
+            return waited, False
+
+        if wait_started_at is None:
+            wait_started_at = time.monotonic()
+
+        _display_terminal_too_small(
+            stdscr,
+            required_width=required_width,
+            required_height=required_height,
+        )
+        stdscr.timeout(100)
+        if stdscr.getch() == ord("q"):
+            stdscr.timeout(-1)
+            return time.monotonic() - wait_started_at, True
 
 
 def _get_hh_mm_ss(seconds: int) -> str:
@@ -111,7 +231,12 @@ def _show_inspirational_quote(stdscr: curses.window, width: int) -> None:
 
 
 def _handle_pause(
-    stdscr: curses.window, paused: bool, width: int, start_time: float
+    stdscr: curses.window,
+    paused: bool,
+    start_time: float,
+    required_width: int,
+    required_height: int,
+    redraw: Callable[[], None],
 ) -> tuple[bool, float, bool, bool]:
     """Handle pause, skip, and quit commands, showing control instructions."""
 
@@ -119,10 +244,22 @@ def _handle_pause(
         stdscr.nodelay(False)
         return paused, start_time, stop, skip
 
+    waited, stop = _wait_for_usable_terminal(
+        stdscr,
+        required_width=required_width,
+        required_height=required_height,
+    )
+    start_time += waited
+    if stop:
+        return finish(stop=True)
+    if waited:
+        redraw()
+
+    width = stdscr.getmaxyx()[1]
     instruction = (
         "[p] RESUME | [s] SKIP | [q] STOP"
         if paused
-        else "[p] PAUSE | [s] SKIP | [q] STOP"
+        else CONTROL_INSTRUCTION
     )
     stdscr.addstr(21, (width - len(instruction)) // 2, instruction)
     stdscr.nodelay(True)
@@ -135,12 +272,25 @@ def _handle_pause(
         paused = not paused
 
     while paused:
+        waited, stop = _wait_for_usable_terminal(
+            stdscr,
+            required_width=required_width,
+            required_height=required_height,
+        )
+        start_time += waited
+        if stop:
+            return finish(stop=True)
+        if waited:
+            redraw()
+
+        width = stdscr.getmaxyx()[1]
         resume_instruction = "[p] RESUME | [s] SKIP | [q] STOP"
         stdscr.addstr(
             21,
             (width - len(resume_instruction)) // 2,
             resume_instruction,
         )
+        stdscr.nodelay(True)
         key = stdscr.getch()
         if key == ord("q"):
             return finish(stop=True)
@@ -159,7 +309,7 @@ def _show_countdown_info(
     countdown_seconds: int = 25 * 60,
     message: str = "",
     is_working: bool = True,
-) -> None:
+) -> bool:
     curses.start_color()
     curses.use_default_colors()
     curses.init_pair(1, curses.COLOR_CYAN, -1)
@@ -172,6 +322,13 @@ def _show_countdown_info(
     )
     max_message_row_len = max(map(len, message_art_text.split("\n")))
     bar_length = max_timer_row_len
+    required_width = max(
+        MIN_TERMINAL_WIDTH,
+        max_timer_row_len + 2,
+        max_message_row_len + 2,
+        len(CONTROL_INSTRUCTION),
+    )
+    required_height = MIN_TERMINAL_HEIGHT
 
     curses.curs_set(0)  # Hide cursor
     start_time = time.monotonic()
@@ -187,28 +344,38 @@ def _show_countdown_info(
         else:
             color_pair = 3  # Red
 
-        _, max_curses_width = stdscr.getmaxyx()
-        timer_text_start_x = (max_curses_width - max_timer_row_len) // 2
-        message_text_start_x = (max_curses_width - max_message_row_len) // 2
-
-        _display_countdown_clock(
-            stdscr=stdscr,
-            second=second,
-            countdown_seconds=countdown_seconds,
-            timer_x=timer_text_start_x,
-            message_x=message_text_start_x,
-            message_art_text=message_art_text,
-            bar_length=bar_length,
-            color_pair=color_pair,
+        waited, stop = _wait_for_usable_terminal(
+            stdscr,
+            required_width=required_width,
+            required_height=required_height,
         )
+        start_time += waited
+        if stop:
+            return True
 
-        _show_inspirational_quote(stdscr, max_curses_width)
+        def redraw() -> None:
+            _, current_width = stdscr.getmaxyx()
+            _display_countdown_clock(
+                stdscr=stdscr,
+                second=second,
+                countdown_seconds=countdown_seconds,
+                timer_x=(current_width - max_timer_row_len) // 2,
+                message_x=(current_width - max_message_row_len) // 2,
+                message_art_text=message_art_text,
+                bar_length=bar_length,
+                color_pair=color_pair,
+            )
+            _show_inspirational_quote(stdscr, current_width)
+
+        redraw()
 
         paused, start_time, stop, skip = _handle_pause(
             stdscr=stdscr,
             paused=paused,
-            width=max_curses_width,
             start_time=start_time,
+            required_width=required_width,
+            required_height=required_height,
+            redraw=redraw,
         )
 
         if stop:

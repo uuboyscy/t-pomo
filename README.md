@@ -31,6 +31,11 @@ After each break, an inspirational quote is displayed to keep you motivated.
 
 Use `[p] PAUSE | [s] SKIP | [q] STOP` to control the timer.
 
+The timer requires a terminal of at least 80 columns by 24 rows. If the
+terminal is too small, t-pomo shows the current and required dimensions and
+automatically pauses until the window is resized. Press `q` to stop from this
+screen.
+
 ## 🖼 Preview
 The timer features an ASCII-style countdown with a modern, solid block progress bar. The interface changes color dynamically to indicate urgency:
 - **Cyan**: Relaxed (> 50% time remaining)
